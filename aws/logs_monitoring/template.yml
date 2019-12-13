@@ -1,6 +1,58 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Pushes logs and metrics from AWS to Datadog.
+Parameters:
+  APIKey:
+    Type: String
+    NoEcho: true
+    Default: "<YOUR_DATADOG_API_KEY>"
+    Description: |
+      The Datadog API key associated with your Datadog Account
+      It can be found here:
+      * Datadog US Site: https://app.datadoghq.com/account/settings#api
+      * Datadog EU Site: https://app.datadoghq.eu/account/settings#api
+  ForwardLog:
+    Type: String
+    Default: "true"
+    Description: |
+      Set this variable to `False` to disable log forwarding.
+      E.g., when you only want to forward metrics from logs.
+  UseTCP:
+    Type: String
+    Default: "false"
+    Description: |
+      Change this value to `true` to send your logs and metrics using the HTTP network client
+      By default, it uses the HTTP client.
+  NoSSL:
+    Type: String
+    Default: "false"
+    Description: |
+      Change this value to `true` to disable SSL
+      Useful when you are forwarding your logs to a proxy.
+  SkipSSLValidation:
+    Type: String
+    Default: "false"
+    Description: Disable SSL certificate validation when forwarding logs via HTTP.
+  Site:
+    Type: String
+    Default: datadoghq.com
+    Description: |
+      Define the Datadog Site to send your logs and metrics to.
+      Set it to `datadoghq.eu` to send your logs and metrics to Datadog EU site.
+  Tags:
+    Type: String
+    Default: ""
+    Description: |
+      Pass custom tags as environment variable or through this variable.
+      Ensure your tags are a comma separated list of strings with no trailing comma in the envvar!
+  RedactEmail:
+    Type: String
+    Default: "true"
+    Description: Redact all pattern that looks like an email address.
+  RedactIP:
+    Type: String
+    Default: "true"
+    Description: Redact all pattern that looks like an ip address.
 Resources:
   loglambdaddfunction:
     Type: 'AWS::Serverless::Function'
@@ -37,3 +89,14 @@ Resources:
                 - 'logs:DescribeSubscriptionFilters'
               Resource: '*'
         - AmazonS3ReadOnlyAccess
+      Environment:
+        Variables:
+          DD_API_KEY: !Ref APIKey
+          DD_FORWARD_LOG: !Ref ForwardLog
+          DD_USE_TCP: !Ref UseTCP
+          DD_NO_SSL: !Ref NoSSL
+          DD_SKIP_SSL_VALIDATION: !Ref SkipSSLValidation
+          DD_SITE: !Ref Site
+          DD_TAGS: !Ref Tags
+          REDACT_EMAIL: !Ref RedactEmail
+          REDACT_IP: !Ref RedactIP
